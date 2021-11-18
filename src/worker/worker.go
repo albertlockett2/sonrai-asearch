@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bytes"
+	"github.com/golang/protobuf/proto"
+	gen "github.com/sonraisecurity/sonrai-asearch/src/proto"
 	"github.com/sonraisecurity/sonrai-asearch/src/queue"
 	"log"
-	"time"
 )
 
 type Worker struct {
@@ -31,11 +31,18 @@ func (w*Worker) Start() error {
 
 	go func() {
 		for d := range msgs {
-			log.Printf("Received a message: %s", d.Body)
-			dotCount := bytes.Count(d.Body, []byte("."))
-			t := time.Duration(dotCount)
-			time.Sleep(t * time.Second)
-			log.Printf("Done")
+			log.Printf("Received a message")
+			record, err := w.Deserialize(d.Body)
+			if err != nil {
+				log.Printf("Error deserializing %v", err)
+				continue
+			}
+
+			err = w.Handle(record)
+			if err != nil {
+				log.Printf("Error handling %v", err)
+				continue
+			}
 		}
 	}()
 	<-forever
@@ -43,3 +50,16 @@ func (w*Worker) Start() error {
 	return nil
 }
 
+func (w*Worker) Deserialize(data []byte) (*gen.InProgressRecord, error) {
+	record := gen.InProgressRecord{}
+	err := proto.Unmarshal(data, &record)
+	if err != nil {
+		return nil, err
+	}
+	return &record, nil
+}
+
+func (w*Worker) Handle(record *gen.InProgressRecord) error {
+	log.Printf("Handling message %v", record)
+	return nil
+}

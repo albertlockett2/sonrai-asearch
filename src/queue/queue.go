@@ -40,7 +40,7 @@ func NewQueue() (*Queue, error) {
 	}, nil
 }
 
-func (q *Queue) Publish() error {
+func (q *Queue) Publish(data []byte) error {
 	err := q.ch.Publish(
 		"",           // exchange
 		q.queue.Name, // routing key
@@ -48,7 +48,7 @@ func (q *Queue) Publish() error {
 		false,        // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        []byte("hello"),
+			Body:        data,
 		},
 	)
 

@@ -7,7 +7,8 @@ service Manager {
 }
 
 message SubmitSearchRequest {
-  string id = 1;
+  string queryId = 1;
+  Search search = 2;
 }
 
 message SubmitSearchResponse {
@@ -16,4 +17,48 @@ message SubmitSearchResponse {
 
 message Search {
   string name = 1;
+  repeated SearchStep steps = 2;
+  int64 limit = 3;
+}
+
+message SearchStep {
+  string id = 1;
+  enum Type {
+    UNKNOWN = 0;
+    FILTER = 1;
+    EDGE = 2;
+  };
+  Type type = 2;
+  repeated Filter filters = 3;
+  repeated Edge edges = 4;
+  repeated SearchStep nextSteps = 5;
+}
+
+message Filter {
+  string property = 1;
+  string value = 2;
+}
+
+message Edge {
+  enum Dir {
+    UNKNOWN = 0;
+    OUT = 1;
+    IN = 2;
+  }
+  Dir dir = 1;
+  string name = 2;
+}
+
+// TODO a less weird name
+message InProgressRecord {
+  string id = 1;
+  string queryId = 2;
+  string stepId = 3;
+  repeated RecordId pathIds = 4;
+  Search search = 5; // TODO not serialize this in-message
+}
+
+message RecordId {
+  string value = 1;
+  string stepId = 2;
 }

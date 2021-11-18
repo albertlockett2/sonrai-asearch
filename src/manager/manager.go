@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"github.com/golang/protobuf/proto"
 	gen "github.com/sonraisecurity/sonrai-asearch/src/proto"
 	queue "github.com/sonraisecurity/sonrai-asearch/src/queue"
+	"log"
 )
 
 type Manager struct {
@@ -22,9 +24,36 @@ func NewManager() (*Manager, error) {
 }
 
 func (m *Manager) SubmitSearch(ctx context.Context, req *gen.SubmitSearchRequest) (*gen.SubmitSearchResponse, error) {
-	err := m.queue.Publish()
-	if err != nil {
-		return nil, err
+
+	// TODO validate req
+	// query ID not empty
+	// search not empty
+	// TODO validate search
+	// has steps
+
+	datas := make([][]byte, 0)
+
+	for _, step := range req.Search.Steps {
+		message := gen.InProgressRecord{
+			Id: "some uuid!!",
+			QueryId: req.QueryId,
+			StepId: step.Id,
+			PathIds: make([]*gen.RecordId, 0),
+			Search: req.Search,
+		}
+		data, err := proto.Marshal(&message)
+		if err != nil {
+			return nil, err
+		}
+		datas = append(datas, data)
+	}
+
+	for _, data := range datas {
+		log.Printf("Sending a message")
+		err := m.queue.Publish(data)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return &gen.SubmitSearchResponse{
