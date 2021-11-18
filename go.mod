@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/cespare/xxhash v1.1.0 // indirect
+	github.com/elastic/go-elasticsearch/v7 v7.14.0
 	github.com/envoyproxy/go-control-plane v0.9.9-0.20210512163311-63b5d3c536b0 // indirect
 	github.com/golang/protobuf v1.5.2
 	github.com/streadway/amqp v1.0.0

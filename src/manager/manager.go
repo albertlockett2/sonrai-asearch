@@ -5,22 +5,32 @@ import (
 	"github.com/golang/protobuf/proto"
 	gen "github.com/sonraisecurity/sonrai-asearch/src/proto"
 	queue "github.com/sonraisecurity/sonrai-asearch/src/queue"
+	"github.com/sonraisecurity/sonrai-asearch/src/resultsdao"
 	"log"
 )
 
 type Manager struct {
 	gen.UnimplementedManagerServer
+	resultsDAO  *resultsdao.ResultsDao
 	workerQueue *queue.Queue
 }
 
 func NewManager() (*Manager, error) {
-	queue, err := queue.NewQueue(queue.WORKER_QUEUE_NAME)
+	r, err := resultsdao.NewResultsDao()
+	if err != nil {
+		return nil, err
+	}
+
+	q, err := queue.NewQueue(queue.WORKER_QUEUE_NAME)
 	if err != nil {
 		// TODO log something useful here
 		return nil, err
 	}
 
-	return &Manager{workerQueue: queue}, nil
+	return &Manager{
+		resultsDAO: r,
+		workerQueue: q,
+	}, nil
 }
 
 func (m *Manager) SubmitSearch(ctx context.Context, req *gen.SubmitSearchRequest) (*gen.SubmitSearchResponse, error) {
@@ -33,13 +43,19 @@ func (m *Manager) SubmitSearch(ctx context.Context, req *gen.SubmitSearchRequest
 
 	datas := make([][]byte, 0)
 
+	// setup tables to contain results
+	err := m.resultsDAO.CreateTables(req)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, step := range req.Search.Steps {
 		message := gen.InProgressRecord{
-			Id: "some uuid!!",
+			Id:      "some uuid!!",
 			QueryId: req.QueryId,
-			StepId: step.Id,
+			StepId:  step.Id,
 			PathIds: make([]*gen.RecordId, 0),
-			Search: req.Search,
+			Search:  req.Search,
 		}
 		data, err := proto.Marshal(&message)
 		if err != nil {

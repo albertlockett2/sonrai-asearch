@@ -5,3 +5,9 @@ services:
     ports:
     - 5672:5672
     - 15672:15672
+  results:
+    image: elasticsearch:7.14.2
+    environment:
+      - discovery.type=single-node
+    ports:
+      - 19200:9200

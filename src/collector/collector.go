@@ -3,12 +3,14 @@ package main
 import (
 	gen "github.com/sonraisecurity/sonrai-asearch/src/proto"
 	"github.com/sonraisecurity/sonrai-asearch/src/queue"
+	"github.com/sonraisecurity/sonrai-asearch/src/resultsdao"
 	"google.golang.org/protobuf/proto"
 	"log"
 )
 
 type Collector struct {
-	queue *queue.Queue
+	queue      *queue.Queue
+	resultsDAO *resultsdao.ResultsDao
 }
 
 func NewCollector() (*Collector, error) {
@@ -16,8 +18,14 @@ func NewCollector() (*Collector, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	r, err := resultsdao.NewResultsDao()
+	if err != nil {
+		return nil, err
+	}
 	return &Collector{
-		queue: q,
+		queue:      q,
+		resultsDAO: r,
 	}, nil
 }
 
@@ -40,11 +48,11 @@ func (c *Collector) Start() error {
 
 			log.Printf("recieved_record: %v", record.PathIds)
 
-			//err = c.Handle(record)
-			//if err != nil {
-			//	log.Printf("Error handling %v", err)
-			//	continue
-			//}
+			err = c.resultsDAO.WriteResults(record)
+			if err != nil {
+				log.Printf("error writing result %v", err)
+				continue
+			}
 		}
 	}()
 	<-forever
