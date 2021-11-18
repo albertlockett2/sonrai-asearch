@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/golang/protobuf/proto"
 	gen "github.com/sonraisecurity/sonrai-asearch/src/proto"
 	"github.com/sonraisecurity/sonrai-asearch/src/queue"
@@ -13,6 +15,11 @@ import (
 
 type GraphFilterMessage struct {
 	Filters []*gen.Filter
+}
+
+type GraphEdgeMessage struct {
+	Id    string
+	Edges []*gen.Edge
 }
 
 type Worker struct {
@@ -29,7 +36,7 @@ func NewWorker() (*Worker, error) {
 	return &Worker{queue: q}, nil
 }
 
-func (w*Worker) Start() error {
+func (w *Worker) Start() error {
 	msgs, err := w.queue.Consume()
 	if err != nil {
 		return err
@@ -58,7 +65,7 @@ func (w*Worker) Start() error {
 	return nil
 }
 
-func (w*Worker) Deserialize(data []byte) (*gen.InProgressRecord, error) {
+func (w *Worker) Deserialize(data []byte) (*gen.InProgressRecord, error) {
 	record := gen.InProgressRecord{}
 	err := proto.Unmarshal(data, &record)
 	if err != nil {
@@ -67,40 +74,152 @@ func (w*Worker) Deserialize(data []byte) (*gen.InProgressRecord, error) {
 	return &record, nil
 }
 
-func (w*Worker) Handle(record *gen.InProgressRecord) error {
+func (w *Worker) Handle(record *gen.InProgressRecord) error {
 	log.Printf("Handling message %v", record)
 
 	// TODO
-	// - find the actual step
-	// - have different logic for processing steps
-	// - take the sources and somehow add to query
+	// - handle edge step
 
+	step := findStepById(record.StepId, record.Search)
+	if step == nil {
+		// TODO is this error helpful enough?
+		return errors.New(fmt.Sprintf("could not find step %s in search", record.StepId))
+	}
+
+	var nextIds []*gen.RecordId
+	var err error
+
+	switch step.Type {
+	case gen.SearchStep_FILTER:
+		nextIds, err = w.HandleFilterStep(step)
+	case gen.SearchStep_EDGE:
+		nextIds, err = w.HandleEdgesStep(step, record)
+	default:
+		return errors.New(fmt.Sprintf("unknown step type %s for step %s", step.Type.String(), step.Id))
+	}
+
+	if err != nil {
+		return err
+	}
+
+	for i := range nextIds {
+		if len(step.NextSteps) > 0 {
+			// emit next step messages
+			for _, nextStep := range step.NextSteps {
+				nextRecord := &gen.InProgressRecord{
+					Search:  record.Search,
+					StepId:  nextStep.Id,
+					Id:      "some-uuid-3",
+					PathIds: append(record.PathIds, nextIds[i]),
+					QueryId: record.QueryId,
+				}
+
+				data, err := proto.Marshal(nextRecord)
+				if err != nil {
+					return err
+				}
+				err = w.queue.Publish(data)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func (w *Worker) HandleFilterStep(step *gen.SearchStep) ([]*gen.RecordId, error) {
 	message := GraphFilterMessage{
-		Filters: record.Search.Steps[0].Filters,
+		Filters: step.Filters,
 	}
 
 	data, err := json.Marshal(message)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	resp, err := http.Post("http://localhost:8080/records", "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ids := make([]int64, 0)
 	err = json.Unmarshal(body, &ids)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	log.Printf("%v", ids)
+	recordIds := make([]*gen.RecordId, 0)
+	for i := range ids {
+		recordIds = append(recordIds, &gen.RecordId{Value: fmt.Sprintf("%d", ids[i])})
+	}
+	return recordIds, nil
+}
+
+func (w *Worker) HandleEdgesStep(step *gen.SearchStep, record *gen.InProgressRecord) ([]*gen.RecordId, error) {
+	// TODO
+	// - validate that record has PathIds > 0
+	// - error handling if request body is bad
+
+	recordId := record.PathIds[len(record.PathIds)-1]
+	message := GraphEdgeMessage{
+		Id:    recordId.Value,
+		Edges: step.Edges,
+	}
+
+	data, err := json.Marshal(message)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.Post("http://localhost:8080/edges", "application/json", bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]int64, 0)
+	err = json.Unmarshal(body, &ids)
+	if err != nil {
+		return nil, err
+	}
+
+	recordIds := make([]*gen.RecordId, 0)
+	for i := range ids {
+		recordIds = append(recordIds, &gen.RecordId{Value: fmt.Sprintf("%d", ids[i])})
+	}
+	return recordIds, nil
+}
+
+func findStepById(stepId string, search *gen.Search) *gen.SearchStep {
+	nextSteps := search.Steps
+	for {
+		if len(nextSteps) == 0 {
+			break
+		}
+		steps := nextSteps
+		nextSteps = make([]*gen.SearchStep, 0)
+		for _, step := range steps {
+			if step.Id == stepId {
+				return step
+			}
+
+			for i := range step.NextSteps {
+				nextSteps = append(nextSteps, step.NextSteps[i])
+			}
+		}
+	}
 	return nil
 }
