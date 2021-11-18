@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package gen;
+
+service Manager {
+  rpc SubmitSearch(SubmitSearchRequest) returns (SubmitSearchResponse) {}
+}
+
+message SubmitSearchRequest {
+  string id = 1;
+}
+
+message SubmitSearchResponse {
+  string status = 1;
+}
+
+message Search {
+  string name = 1;
+}
