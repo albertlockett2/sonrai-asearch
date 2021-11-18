@@ -58,6 +58,13 @@ message InProgressRecord {
   Search search = 5; // TODO not serialize this in-message
 }
 
+message ResultRecord {
+  string id = 1;
+  string queryId = 2;
+  repeated RecordId pathIds = 4;
+  Search search = 5; // TODO not serialize this in-message
+}
+
 message RecordId {
   string value = 1;
   string stepId = 2;

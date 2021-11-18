@@ -23,17 +23,23 @@ type GraphEdgeMessage struct {
 }
 
 type Worker struct {
-	queue *queue.Queue
+	queue       *queue.Queue
+	resultQueue *queue.Queue
 }
 
 func NewWorker() (*Worker, error) {
-	q, err := queue.NewQueue()
+	wqueue, err := queue.NewQueue(queue.WORKER_QUEUE_NAME)
 	if err != nil {
 		// TODO log something useful here
 		return nil, err
 	}
 
-	return &Worker{queue: q}, nil
+	rqueue, err := queue.NewQueue(queue.RESULT_QUEUE_NAME)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Worker{queue: wqueue, resultQueue: rqueue}, nil
 }
 
 func (w *Worker) Start() error {
@@ -123,6 +129,24 @@ func (w *Worker) Handle(record *gen.InProgressRecord) error {
 					return err
 				}
 			}
+		} else {
+			// emit the result message
+			resultRecord := &gen.ResultRecord{
+				Id:      "some uuid",
+				QueryId: record.QueryId,
+				PathIds: append(record.PathIds, nextIds[i]),
+				Search:  record.Search,
+			}
+
+			data, err := proto.Marshal(resultRecord)
+			if err != nil {
+				return err
+			}
+
+			err = w.resultQueue.Publish(data)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -158,7 +182,10 @@ func (w *Worker) HandleFilterStep(step *gen.SearchStep) ([]*gen.RecordId, error)
 
 	recordIds := make([]*gen.RecordId, 0)
 	for i := range ids {
-		recordIds = append(recordIds, &gen.RecordId{Value: fmt.Sprintf("%d", ids[i])})
+		recordIds = append(recordIds, &gen.RecordId{
+			StepId: step.Id,
+			Value:  fmt.Sprintf("%d", ids[i]),
+		})
 	}
 	return recordIds, nil
 }
@@ -198,7 +225,10 @@ func (w *Worker) HandleEdgesStep(step *gen.SearchStep, record *gen.InProgressRec
 
 	recordIds := make([]*gen.RecordId, 0)
 	for i := range ids {
-		recordIds = append(recordIds, &gen.RecordId{Value: fmt.Sprintf("%d", ids[i])})
+		recordIds = append(recordIds, &gen.RecordId{
+			StepId: step.Id,
+			Value:  fmt.Sprintf("%d", ids[i]),
+		})
 	}
 	return recordIds, nil
 }

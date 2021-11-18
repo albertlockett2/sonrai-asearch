@@ -10,17 +10,17 @@ import (
 
 type Manager struct {
 	gen.UnimplementedManagerServer
-	queue *queue.Queue
+	workerQueue *queue.Queue
 }
 
 func NewManager() (*Manager, error) {
-	queue, err := queue.NewQueue()
+	queue, err := queue.NewQueue(queue.WORKER_QUEUE_NAME)
 	if err != nil {
 		// TODO log something useful here
 		return nil, err
 	}
 
-	return &Manager{queue: queue}, nil
+	return &Manager{workerQueue: queue}, nil
 }
 
 func (m *Manager) SubmitSearch(ctx context.Context, req *gen.SubmitSearchRequest) (*gen.SubmitSearchResponse, error) {
@@ -50,7 +50,7 @@ func (m *Manager) SubmitSearch(ctx context.Context, req *gen.SubmitSearchRequest
 
 	for _, data := range datas {
 		log.Printf("Sending a message")
-		err := m.queue.Publish(data)
+		err := m.workerQueue.Publish(data)
 		if err != nil {
 			return nil, err
 		}

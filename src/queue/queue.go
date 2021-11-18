@@ -2,13 +2,16 @@ package queue
 
 import "github.com/streadway/amqp"
 
+const WORKER_QUEUE_NAME string = "q_asearch_worker"
+const RESULT_QUEUE_NAME string = "q_asearch_results"
+
 type Queue struct {
 	conn  *amqp.Connection
 	ch    *amqp.Channel
 	queue *amqp.Queue
 }
 
-func NewQueue() (*Queue, error) {
+func NewQueue(name string) (*Queue, error) {
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
 	if err != nil {
 		return nil, err
@@ -22,7 +25,7 @@ func NewQueue() (*Queue, error) {
 	// defer ch.Close()
 
 	queue, err := ch.QueueDeclare(
-		"asearch1",
+		name,
 		false, // durable
 		false, // delete when unused
 		false, // exclusive
