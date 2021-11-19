@@ -5,18 +5,18 @@ import (
 	"github.com/golang/protobuf/proto"
 	gen "github.com/sonraisecurity/sonrai-asearch/src/proto"
 	queue "github.com/sonraisecurity/sonrai-asearch/src/queue"
-	"github.com/sonraisecurity/sonrai-asearch/src/resultsdao"
+	"github.com/sonraisecurity/sonrai-asearch/src/results/dao"
 	"log"
 )
 
 type Manager struct {
 	gen.UnimplementedManagerServer
-	resultsDAO  *resultsdao.ResultsDao
+	resultsDAO  *dao.ResultsDao
 	workerQueue *queue.Queue
 }
 
 func NewManager() (*Manager, error) {
-	r, err := resultsdao.NewResultsDao()
+	r, err := dao.NewResultsDao()
 	if err != nil {
 		return nil, err
 	}

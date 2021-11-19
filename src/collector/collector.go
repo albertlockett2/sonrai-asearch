@@ -3,14 +3,14 @@ package main
 import (
 	gen "github.com/sonraisecurity/sonrai-asearch/src/proto"
 	"github.com/sonraisecurity/sonrai-asearch/src/queue"
-	"github.com/sonraisecurity/sonrai-asearch/src/resultsdao"
+	"github.com/sonraisecurity/sonrai-asearch/src/results/dao"
 	"google.golang.org/protobuf/proto"
 	"log"
 )
 
 type Collector struct {
 	queue      *queue.Queue
-	resultsDAO *resultsdao.ResultsDao
+	resultsDAO *dao.ResultsDao
 }
 
 func NewCollector() (*Collector, error) {
@@ -19,7 +19,7 @@ func NewCollector() (*Collector, error) {
 		return nil, err
 	}
 
-	r, err := resultsdao.NewResultsDao()
+	r, err := dao.NewResultsDao()
 	if err != nil {
 		return nil, err
 	}

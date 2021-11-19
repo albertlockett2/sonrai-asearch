@@ -6,6 +6,10 @@ service Manager {
   rpc SubmitSearch(SubmitSearchRequest) returns (SubmitSearchResponse) {}
 }
 
+service Results {
+  rpc GetResults(ResultsRequest) returns (ResultsResponse) {}
+}
+
 message SubmitSearchRequest {
   string queryId = 1;
   Search search = 2;
@@ -68,4 +72,13 @@ message ResultRecord {
 message RecordId {
   string value = 1;
   string stepId = 2;
+}
+
+message ResultsRequest {
+  string queryId = 1;
+  string stepId = 2;
+}
+
+message ResultsResponse {
+  repeated string ids = 1;
 }

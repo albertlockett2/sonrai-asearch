@@ -8,6 +8,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	gen "github.com/sonraisecurity/sonrai-asearch/src/proto"
 	"github.com/sonraisecurity/sonrai-asearch/src/queue"
+	"github.com/sonraisecurity/sonrai-asearch/src/util"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -86,7 +87,7 @@ func (w *Worker) Handle(record *gen.InProgressRecord) error {
 	// TODO
 	// - handle edge step
 
-	step := findStepById(record.StepId, record.Search)
+	step := util.FindStepById(record.StepId, record.Search)
 	if step == nil {
 		// TODO is this error helpful enough?
 		return errors.New(fmt.Sprintf("could not find step %s in search", record.StepId))
@@ -233,23 +234,3 @@ func (w *Worker) HandleEdgesStep(step *gen.SearchStep, record *gen.InProgressRec
 	return recordIds, nil
 }
 
-func findStepById(stepId string, search *gen.Search) *gen.SearchStep {
-	nextSteps := search.Steps
-	for {
-		if len(nextSteps) == 0 {
-			break
-		}
-		steps := nextSteps
-		nextSteps = make([]*gen.SearchStep, 0)
-		for _, step := range steps {
-			if step.Id == stepId {
-				return step
-			}
-
-			for i := range step.NextSteps {
-				nextSteps = append(nextSteps, step.NextSteps[i])
-			}
-		}
-	}
-	return nil
-}
