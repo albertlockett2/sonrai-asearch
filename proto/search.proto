@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package gen;
 
+option java_package = "com.sonraisecurity.asearch";
+
 service Manager {
   rpc SubmitSearch(SubmitSearchRequest) returns (SubmitSearchResponse) {}
 }
