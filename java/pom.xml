@@ -19,13 +19,13 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
-            <version>1.42.1</version>
+            <version>1.26.1</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/io.grpc/grpc-protobuf -->
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>
-            <version>1.42.1</version>
+            <version>1.21.0</version>
         </dependency>
 
         <!--        &lt;!&ndash; https://mvnrepository.com/artifact/io.grpc/grpc-core &ndash;&gt;-->
