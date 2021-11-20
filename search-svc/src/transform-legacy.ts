@@ -160,6 +160,7 @@ function addNextSteps(
   // TODO handle case that there is more than one edge
   if (edges.length > 0) {
     const edgeStep = new SearchStep();
+    edgeStep.setId(newStepId());
     edgeStep.setType(SearchStep.Type.EDGE);
     edgeStep.addEdges(edges[0]);
 
