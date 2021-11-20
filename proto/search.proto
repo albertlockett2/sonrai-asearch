@@ -12,6 +12,10 @@ service Results {
   rpc GetResults(ResultsRequest) returns (ResultsResponse) {}
 }
 
+service SearchService {
+  rpc TransformLegacySearch(TransformLegacySearchRequest) returns (TransformLegacySearchResponse) {}
+}
+
 message SubmitSearchRequest {
   string queryId = 1;
   Search search = 2;
@@ -83,4 +87,12 @@ message ResultsRequest {
 
 message ResultsResponse {
   repeated string ids = 1;
+}
+
+message TransformLegacySearchRequest {
+  string source = 1;
+}
+
+message TransformLegacySearchResponse {
+  Search search = 1;
 }
