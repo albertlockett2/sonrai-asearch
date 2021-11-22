@@ -15,6 +15,7 @@ import (
 )
 
 type GraphFilterMessage struct {
+	Id      string
 	Filters []*gen.Filter
 }
 
@@ -84,9 +85,6 @@ func (w *Worker) Deserialize(data []byte) (*gen.InProgressRecord, error) {
 func (w *Worker) Handle(record *gen.InProgressRecord) error {
 	log.Printf("Handling message %v", record)
 
-	// TODO
-	// - handle edge step
-
 	step := util.FindStepById(record.StepId, record.Search)
 	if step == nil {
 		// TODO is this error helpful enough?
@@ -98,7 +96,7 @@ func (w *Worker) Handle(record *gen.InProgressRecord) error {
 
 	switch step.Type {
 	case gen.SearchStep_FILTER:
-		nextIds, err = w.HandleFilterStep(step)
+		nextIds, err = w.HandleFilterStep(step, record)
 	case gen.SearchStep_EDGE:
 		nextIds, err = w.HandleEdgesStep(step, record)
 	default:
@@ -154,9 +152,13 @@ func (w *Worker) Handle(record *gen.InProgressRecord) error {
 	return nil
 }
 
-func (w *Worker) HandleFilterStep(step *gen.SearchStep) ([]*gen.RecordId, error) {
+func (w *Worker) HandleFilterStep(step *gen.SearchStep, record *gen.InProgressRecord) ([]*gen.RecordId, error) {
 	message := GraphFilterMessage{
 		Filters: step.Filters,
+	}
+
+	if len(record.PathIds) > 0 {
+		message.Id = record.PathIds[len(record.PathIds) - 1].Value
 	}
 
 	data, err := json.Marshal(message)
@@ -233,4 +235,3 @@ func (w *Worker) HandleEdgesStep(step *gen.SearchStep, record *gen.InProgressRec
 	}
 	return recordIds, nil
 }
-
