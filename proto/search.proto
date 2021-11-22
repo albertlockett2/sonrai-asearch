@@ -5,6 +5,7 @@ package gen;
 option java_package = "com.sonraisecurity.asearch";
 
 service Manager {
+  rpc GetSearchHistory(GetSearhHistoryRequest) returns (GetSearchHistoryResponse) {}
   rpc SubmitSearch(SubmitSearchRequest) returns (SubmitSearchResponse) {}
 }
 
@@ -14,6 +15,14 @@ service Results {
 
 service SearchService {
   rpc TransformLegacySearch(TransformLegacySearchRequest) returns (TransformLegacySearchResponse) {}
+}
+
+message GetSearhHistoryRequest {
+
+}
+
+message GetSearchHistoryResponse {
+  repeated SubmitSearchRequest requests = 1;
 }
 
 message SubmitSearchRequest {

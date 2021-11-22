@@ -1,4 +1,4 @@
-package main
+package collector
 
 import (
 	gen "github.com/sonraisecurity/sonrai-asearch/src/proto"

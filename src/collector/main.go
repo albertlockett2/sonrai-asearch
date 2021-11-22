@@ -1,8 +1,8 @@
-package main
+package collector
 
 import "log"
 
-func main() {
+func Main() {
 	collector, err := NewCollector()
 	if err != nil {
 		log.Fatalf("failed to create collecotr: %v", err)

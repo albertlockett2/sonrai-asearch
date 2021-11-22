@@ -1,4 +1,4 @@
-package main
+package manager
 
 import (
 	"context"
@@ -13,6 +13,8 @@ type Manager struct {
 	gen.UnimplementedManagerServer
 	resultsDAO  *dao.ResultsDao
 	workerQueue *queue.Queue
+	// TODO not keep the history in memory
+	history []*gen.SubmitSearchRequest
 }
 
 func NewManager() (*Manager, error) {
@@ -40,6 +42,7 @@ func (m *Manager) SubmitSearch(ctx context.Context, req *gen.SubmitSearchRequest
 	// search not empty
 	// TODO validate search
 	// has steps
+	m.history = append(m.history, req)
 
 	datas := make([][]byte, 0)
 
@@ -74,5 +77,11 @@ func (m *Manager) SubmitSearch(ctx context.Context, req *gen.SubmitSearchRequest
 
 	return &gen.SubmitSearchResponse{
 		Status: "OK",
+	}, nil
+}
+
+func (m *Manager) GetSearchHistory(ctx context.Context, req *gen.GetSearhHistoryRequest) (*gen.GetSearchHistoryResponse, error) {
+	return &gen.GetSearchHistoryResponse{
+		Requests: m.history,
 	}, nil
 }

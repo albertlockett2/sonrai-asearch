@@ -9,4 +9,12 @@ java:
 install-java: java
 	cd ./java && mvn install
 
+golang:
+	mkdir -p ./build
+	go mod vendor
+	go build -o ./build/asearch ./src/main.go
+
+docker: golang
+	docker build . -t asearch:latest
+
 all: proto install-java

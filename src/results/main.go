@@ -1,4 +1,4 @@
-package main
+package results
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"net"
 )
 
-func main() {
+func Main() {
 	// TODO
 	// - not hardcode port
 	// - make this a util or something reusable (maybe)

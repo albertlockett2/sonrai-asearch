@@ -1,4 +1,4 @@
-package main
+package manager
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"net"
 )
 
-func main() {
+func Main() {
 	port := 9881 // TODO not have this hard-coded
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {

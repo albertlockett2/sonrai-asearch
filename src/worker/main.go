@@ -1,8 +1,8 @@
-package main
+package worker
 
 import "log"
 
-func main() {
+func Main() {
 	worker, err := NewWorker()
 	if err != nil {
 		log.Fatalf("Failed create worker: %v", err)
