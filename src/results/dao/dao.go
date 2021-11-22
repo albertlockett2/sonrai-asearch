@@ -13,13 +13,13 @@ import (
 	"strings"
 )
 
-type resultRecord struct {
+type ResultRecord struct {
 	StepId   string
 	RecordId string
 	OtherId  string
 }
 
-func (r *resultRecord) documentId() string {
+func (r *ResultRecord) documentId() string {
 	return fmt.Sprintf("%s_%s_%s", r.StepId, r.RecordId, r.OtherId)
 }
 
@@ -81,7 +81,7 @@ func (r *ResultsDao) WriteResults(results *gen.ResultRecord) error {
 		}
 
 		// construct record
-		record := &resultRecord{StepId: result.StepId}
+		record := &ResultRecord{StepId: result.StepId}
 		if stepsById[result.StepId].Type == gen.SearchStep_EDGE {
 			record.RecordId = results.PathIds[i-1].Value
 			record.OtherId = result.Value
@@ -119,6 +119,15 @@ func (r *ResultsDao) GetResults(req *gen.ResultsRequest) ([]string, error) {
 	// - don't build the search body like this
 	// - rewrite this method so it's not so weird
 
+	srcIdsTerm := ""
+	if req.SourceIds != nil {
+		srcIdsTerm = fmt.Sprintf(
+			`,
+					{ "terms": { "RecordId": ["%s"] } }`,
+			strings.Join(req.SourceIds, ","),
+		)
+	}
+
 	searchReq := esapi.SearchRequest{
 		Index: []string{indexName(req.QueryId)},
 		Body: strings.NewReader(fmt.Sprintf(`{
@@ -126,11 +135,11 @@ func (r *ResultsDao) GetResults(req *gen.ResultsRequest) ([]string, error) {
 			"query": {
         "bool": {
           "must": [
-            { "term": { "StepId": "%s" } }
+            { "term": { "StepId": "%s" } }%s
           ]
         }
       }
-		}`, req.StepId)),
+		}`, req.StepId, srcIdsTerm)),
 	}
 
 	res, err := searchReq.Do(context.Background(), r.esclient)
@@ -174,7 +183,7 @@ func (r *ResultsDao) GetResults(req *gen.ResultsRequest) ([]string, error) {
 
 		source := hit.(map[string]interface{})["_source"]
 
-		record := resultRecord{
+		record := ResultRecord{
 			StepId: source.(map[string]interface{})["StepId"].(string),
 			OtherId: source.(map[string]interface{})["OtherId"].(string),
 			RecordId: source.(map[string]interface{})["RecordId"].(string),

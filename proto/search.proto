@@ -83,6 +83,7 @@ message RecordId {
 message ResultsRequest {
   string queryId = 1;
   string stepId = 2;
+  repeated string sourceIds = 3;
 }
 
 message ResultsResponse {
